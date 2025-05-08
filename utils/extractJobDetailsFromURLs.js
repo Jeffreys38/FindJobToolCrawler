@@ -1,11 +1,9 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import saveAs from "./saveAs.js";
 import cliProgress from "cli-progress";
 import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker'
 import fs from 'fs'
-import { simulateMouseClick, sleep, sleepRandom } from "./byPassing.js";
-import { count } from "console";
+import { sleepRandom } from "./byPassing.js";
 
 // Use plugins
 puppeteer.use(AdblockerPlugin({ blockTrackers: true }))
@@ -41,8 +39,7 @@ export default async function extractJobDetailsFromURLs(input, output) {
     // If work didn't  finish
     listJobs = unfinishedJob(listJobs, output)
 
-    const data = await extractJobs(listJobs, input, output)
-    //fs.writeFileSync(output, JSON.stringify(data))
+    await extractJobs(listJobs, input, output)
 }
 
 /**
@@ -70,10 +67,9 @@ const extractJobs = async (listJob, input, output) => {
         // Nếu CloudFlare chặn lại thì lưu lại, kèm theo vị trí hiện tại
         try {
             const options = {
-                'timeout': 4 * 1000
+                'timeout': 6 * 1000
             }
             await page.waitForSelector('.job-detail__body-left', options)
-
             bar.increment()
         } catch(e) {
             if (!fs.existsSync(output))
@@ -88,7 +84,7 @@ const extractJobs = async (listJob, input, output) => {
             // Update file again
             fs.writeFileSync(output, JSON.stringify(generatedJob))
 
-            // After random seconds, call again with new tab and continue work
+            // After random seconds, call again with new tab and continue working
             await sleepRandom(2 * 60 * 60, 3 * 60 * 60)
 
             // Get list url
@@ -99,18 +95,17 @@ const extractJobs = async (listJob, input, output) => {
             const done = urls.length - unJob.length
             console.log(`\n[${done} / ${urls.length}]`)
 
-            // Probleum: If job didn't remove, check if 2nd remove it
+            // If you still can't get it 2 times = CloudFlare + Working is removed, give it up
             countPassedJob++
             if (countPassedJob == 2) {
-                unJob.shift()
+                // Remote work is not working in file
+                removeUrlJob(input, url)
+
                 countPassedJob = 0
             }
 
             await extractJobs(unJob, input, output)
         }
-
-        // ByPassing CloudFlare
-        await sleepRandom(500, 900)
 
         let job = await page.evaluate(() => {
             // Tên việc làm
@@ -146,12 +141,13 @@ const extractJobs = async (listJob, input, output) => {
                 .find(element => element.textContent.trim() === "Cách thức ứng tuyển")
                 .nextElementSibling.textContent.trim();
 
-            return { name, experience, description, required, benefit, address, applyMethod }
+            const companyName = document.querySelector(".company-name-label > a").innerText;
+            const companyLogo = document.querySelector(".company-logo > img").src
+
+            return { name, experience, description, required, benefit, address, applyMethod, companyName, companyLogo }
         });
         
         data.push(job)
-
-        await simulateMouseClick(page)
     }
 
     bar.stop()
@@ -175,4 +171,22 @@ const unfinishedJob = (listJobs, output) => {
     }
 
     return result
+}
+
+function removeUrlJob(inputFile, urlRemove) {
+    let listJob = JSON.parse(fs.readFileSync(inputFile))
+    let newList = []
+    let temp = []
+
+    for (const [index, job] of listJob.entries()) {
+        if (job == urlRemove) {
+            newList = listJob.slice(0, index )
+            temp = listJob.slice(index + 1, listJob.length)
+            newList = newList.concat(temp)
+
+            break
+        }
+    }
+
+    fs.writeFileSync(inputFile, JSON.stringify(newList))
 }

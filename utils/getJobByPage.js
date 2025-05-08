@@ -25,9 +25,9 @@ export default async function getJobByPage(startPage, endPage) {
     },
     cliProgress.Presets.shades_classic
   );
-  bar1.start(listJob().length, 0);
+  bar1.start(listJob(startPage, endPage).length, 0);
 
-  for (const [index, job] of listJob().entries()) {
+  for (const [index, job] of listJob(startPage, endPage).entries()) {
     await page.goto(job);
 
     // Wait for a more specific element or condition before proceeding
@@ -57,7 +57,7 @@ export default async function getJobByPage(startPage, endPage) {
   await browser.close();
 }
 
-const listJob = () => {
+const listJob = (startPage, endPage) => {
   let array = [];
 
 

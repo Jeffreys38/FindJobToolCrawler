@@ -1,13 +1,11 @@
-import getJobByPage from "./utils/getJobByPage.js";
 import extractJobDetailsFromURLs from "./utils/extractJobDetailsFromURLs.js";
-import fs from 'fs'
+import downloadPic from "./utils/downloadPic.js";
+import formatData from "./utils/formatData.js";
 
-const input = './data/jobs.json';
-const output = './detailsJob.json';
+const input = './detail.json';
+const output = 'logos';
 
-(async function() {
-    await extractJobDetailsFromURLs(input, output)
-
-})()
-
-// console.log(JSON.parse(fs.readFileSync(output)).length)
+//extractJobDetailsFromURLs('C:/Users/quoct/Data/Projects/find-job/data/jobs.json', 'detail.json');
+//downloadPic(input, output)
+// getJobByPage(1, 100);
+formatData();
