@@ -8,8 +8,9 @@ A Python-based tool that crawls and extracts public resume data from TopCV.vn fo
 ---
 
 ## 📦 Project Structure
-/
+
 ├── data/ # Extracted job url from TopCV
+
 ├── detailsJob.json # Extracted job detail from job url
 
 ## ✅ Features
